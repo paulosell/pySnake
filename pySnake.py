@@ -1,83 +1,72 @@
-import curses
+import pygame
 import random
+from pygame.locals import *
 
-screen = curses.initscr() # Inicia uma janela
-curses.curs_set(0) 
-alt, lar = screen.getmaxyx()
-newScreen = curses.newwin(alt, lar, 0 ,0)
-newScreen.keypad(True)
-newScreen.timeout(100)
+def on_grid_random():
+    x = random.randint(0,590)
+    y = random.randint(0,590)
+    return (x//10*10, y//10 * 10)
 
-snk_x = int(lar/2)
-snk_y = int(alt/2)
+def collision(c1,c2):
+    return (c1[0] == c2[0] and c1[1] == c2[1])
 
-snake = [[snk_y, snk_x], 
-        [snk_y-1, snk_x], 
-        [snk_y-2, snk_x]
-        ] 
-# Cria uma cobra, descendo em Y
+UP = 0
+RIGHT = 1
+DOWN = 2
+LEFT = 3
 
-food = [int(alt/2), int(lar/4)]
-newScreen.addch(food[0], food[1], 'x')
-key = curses.KEY_RIGHT
+pygame.init()
+screen = pygame.display.set_mode((600,600))
+pygame.display.set_caption('Snake')
 
-while(True):
-    next_key = newScreen.getch()
-    key = key if next_key == -1 else next_key
+snake = [(200,200),(210,200),(220,200)]
+snake_skin = pygame.Surface((10,10))
+snake_skin.fill((255,255,255))
 
-           # Se a cobra estiver em lugar proibido fecha o programa
+apple = pygame.Surface((10,10))
+apple.fill((255,0,0))
+apple_pos = on_grid_random()
+my_direction = LEFT
+
+clock = pygame.time.Clock()
+while True:
+    clock.tick(20)
+    for event in pygame.event.get():
+        if event.type == QUIT:
+            pygame.quit()
+
+        if event.type == KEYDOWN:
+            if event.key == K_UP:
+                my_direction = UP
+            if event.key == K_DOWN:
+                my_direction = DOWN
+            if event.key == K_RIGHT:
+                my_direction = RIGHT
+            if event.key == K_LEFT:
+                my_direction = LEFT
+
+    if collision(snake[0], apple_pos):
+        apple_pos = on_grid_random()
+        snake.append((0,0))
+
+    for i in range(len(snake)-1,0,-1):
+        snake[i] = (snake[i-1][0], snake[i-1][1])
+
+    if my_direction == UP:
+        snake[0] = (snake[0][0], snake[0][1]-10)
     
-    new_head = [snake[0][0], snake[0][1]] # cria a primeira cobra
+    if my_direction == DOWN:
+        snake[0] = (snake[0][0], snake[0][1]+10)
+
+    if my_direction == LEFT:
+        snake[0] = (snake[0][0]-10, snake[0][1])
+
+    if my_direction == RIGHT:
+        snake[0] = (snake[0][0]+10, snake[0][1])
+
+    screen.fill((0,0,0))
+    screen.blit(apple, apple_pos)
+    for pos in snake:
+        screen.blit(snake_skin,pos)
     
-    if key == curses.KEY_DOWN:
-        new_head[0] += 1
-    if key == curses.KEY_UP:
-        new_head[0] -= 1
-    if key == curses.KEY_LEFT:
-        new_head[1] -= 1
-    if key == curses.KEY_RIGHT:
-        new_head[1] += 1
-
-    snake.insert(0, new_head)
-
-    if snake[0] == food:
-        food = None
-        while food is None:
-            new_food = [
-                random.randint(1, alt-1),
-                random.randint(1, lar-1)
-            ]
-            food = new_food if new_food not in snake else None
-        newScreen.addch(food[0], food[1], 'x')
-    else:
-        tail = snake.pop()
-        newScreen.addch(tail[0], tail[1], ' ')
-    if snake[0][0] in [0, alt] or snake[0][1] in [0,lar] or snake[0] in snake[1:]:
-        curses.endwin()
-        quit()
-    newScreen.addch(snake[0][0], snake[0][1], curses.ACS_CKBOARD)
-
-
-
-# import random
-# import curses
-
-# s = curses.initscr()
-# curses.curs_set(0)
-# sh, sw = s.getmaxyx()
-# w = curses.newwin(sh, sw, 0, 0)
-# w.keypad(1)
-# w.timeout(100)
-
-# snk_x = int(sw/4)
-# snk_y = int(sh/2)
-# snake = [
-#     [snk_y, snk_x],
-#     [snk_y, snk_x-1],
-#     [snk_y, snk_x-2]
-# ]
-
-# food = [int(sh/2), int(sw/2)]
-# w.addch(food[0], food[1], curses.ACS_PI)
-# while True:
-#     w.addch(food[0], food[1], curses.ACS_PI)
+    pygame.display.update()
